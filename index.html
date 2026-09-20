@@ -14,7 +14,29 @@
             flex-direction: column;
             align-items: center;
         }
-        h1 { color: #2c3e50; margin-bottom: 30px; }
+        h1 { color: #2c3e50; margin-bottom: 10px; }
+        .admin-panel {
+            background: #e2e8f0;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            max-width: 1200px;
+            width: 100%;
+            box-sizing: border-radius;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .admin-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .admin-btn:hover { background-color: #c0392b; }
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -30,51 +52,44 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: transform 0.2s;
         }
-        .dish-card:hover { transform: translateY(-5px); }
         .dish-name { font-size: 20px; font-weight: bold; color: #2c3e50; margin: 0 0 10px 0; }
         .dish-desc { font-size: 14px; color: #7f8c8d; line-height: 1.4; margin: 0 0 20px 0; }
         .dish-footer { display: flex; justify-content: space-between; align-items: center; }
         .dish-price { font-size: 18px; font-weight: bold; color: #e67e22; }
-        .buy-btn {
-            background-color: #2ecc71;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .buy-btn:hover { background-color: #27ae60; }
-        .status-box { margin-bottom: 20px; color: #7f8c8d; font-size: 14px; }
+        .status-box { margin-bottom: 10px; color: #7f8c8d; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <h1>🚀 Доставка еды SkyFood</h1>
-    <div id="status" class="status-box">Загрузка меню из PostgreSQL...</div>
+    
+    <!-- КНОПКА ДЛЯ ДЕМОНСТРАЦИИ ИЗМЕНЕНИЯ ПАРАМЕТРА -->
+    <div class="admin-panel">
+        <div>
+            <strong>Пульт преподавателя:</strong> Тестирование интерактивного UPDATE-запроса в СУБД.
+        </div>
+        <button class="admin-btn" onclick="triggerDbUpdate()">Сделать скидку на пиццу до 99 ₽</button>
+    </div>
 
-    <!-- Сюда JavaScript автоматически вставит блюда из базы данных -->
+    <div id="status" class="status-box">Загрузка меню из PostgreSQL...</div>
     <div id="menu" class="menu-grid"></div>
 
 <script>
+    const backendUrl = 'https://skyfood-95ma.onrender.com';
+
+    // 1. Функция загрузки меню с сервера
     async function loadMenu() {
         const menuContainer = document.getElementById('menu');
         const statusBox = document.getElementById('status');
         
         try {
-            // Подключаем наш живой Java-сервер на Render
-            const backendUrl = window.env?.VITE_API_URL || 'https://onrender.com';
-            
-            // Вызываем новый эндпоинт, который мы прописали в Main.java
             const response = await fetch(`${backendUrl}/api/dishes`);
             const dishes = await response.json();
             
-            statusBox.innerText = `🟢 Связь установлена. Загружено блюд из СУБД Neon: ${dishes.length}`;
-            menuContainer.innerHTML = ''; // Очищаем контейнер
+            statusBox.innerText = `🟢 Загружено блюд из СУБД Neon: ${dishes.length}`;
+            menuContainer.innerHTML = '';
 
-            // Динамически создаем карточки для каждого блюда из базы данных
             dishes.forEach(dish => {
                 const card = document.createElement('div');
                 card.className = 'dish-card';
@@ -85,26 +100,37 @@
                     </div>
                     <div class="dish-footer">
                         <span class="dish-price">${dish.price} ₽</span>
-                        <button class="buy-btn" onclick="alert('Вы заказали ${dish.name}!')">В корзину</button>
                     </div>
                 `;
                 menuContainer.appendChild(card);
             });
-
         } catch (error) {
-            statusBox.innerHTML = '🔴 <span style="color: #c62828;">Ошибка загрузки меню. Проверьте логи бэкенда.</span>';
-            console.error(error);
+            statusBox.innerHTML = '<span style="color: #c62828;">🔴 Ошибка загрузки меню.</span>';
         }
     }
 
-    // Запускаем загрузку сразу при открытии страницы
-    window.onload = loadMenu;
-</script>
+    // 2. ФУНКЦИЯ ДЕЙСТВИЯ: Меняет параметр в БД при клике на кнопку
+    async function triggerDbUpdate() {
+        if (!confirm("Отправить SQL-запрос UPDATE в базу данных Neon?")) return;
 
-<script>
-    window.env = {
-        VITE_API_URL: "https://skyfood-95ma.onrender.com" 
-    };
+        try {
+            const response = await fetch(`${backendUrl}/api/dishes/update-price`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                alert(data.message);
+                loadMenu(); // Перезагружаем витрину, чтобы увидеть изменения!
+            } else {
+                alert("Ошибка: " + data.message);
+            }
+        } catch (error) {
+            alert("Не удалось связаться с сервером для изменения данных.");
+        }
+    }
+
+    window.onload = loadMenu;
 </script>
 </body>
 </html>

@@ -22,10 +22,21 @@
             margin-bottom: 30px;
             max-width: 1200px;
             width: 100%;
-            box-sizing: border-radius;
+            box-sizing: border-box;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .admin-controls { display: flex; align-items: center; gap: 10px; }
+        .price-input {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            width: 100px;
+            text-align: center;
         }
         .admin-btn {
             background-color: #e74c3c;
@@ -35,6 +46,7 @@
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 16px;
         }
         .admin-btn:hover { background-color: #c0392b; }
         .menu-grid {
@@ -64,12 +76,16 @@
 
     <h1>🚀 Доставка еды SkyFood</h1>
     
-    <!-- КНОПКА ДЛЯ ДЕМОНСТРАЦИИ ИЗМЕНЕНИЯ ПАРАМЕТРА -->
+    <!-- ИНТЕРАКТИВНЫЙ ПУЛЬТ С ПОВЫШЕНИЕМ/ПОНИЖЕНИЕМ ПАРАМЕТРА -->
     <div class="admin-panel">
         <div>
-            <strong>Пульт преподавателя:</strong> Тестирование интерактивного UPDATE-запроса в СУБД.
+            <strong>Пульт преподавателя:</strong> Интерактивное изменение цены Пиццы в СУБД Neon.
         </div>
-        <button class="admin-btn" onclick="triggerDbUpdate()">Сделать скидку на пиццу до 99 ₽</button>
+        <div class="admin-controls">
+            <input type="number" id="customPrice" class="price-input" value="350" min="1" max="10000">
+            <span style="font-size: 16px; font-weight: bold;">₽</span>
+            <button class="admin-btn" onclick="triggerDbUpdate()">Установить цену</button>
+        </div>
     </div>
 
     <div id="status" class="status-box">Загрузка меню из PostgreSQL...</div>
@@ -78,7 +94,7 @@
 <script>
     const backendUrl = 'https://skyfood-95ma.onrender.com';
 
-    // 1. Функция загрузки меню с сервера
+    // Функция загрузки актуального меню с сервера
     async function loadMenu() {
         const menuContainer = document.getElementById('menu');
         const statusBox = document.getElementById('status');
@@ -87,7 +103,7 @@
             const response = await fetch(`${backendUrl}/api/dishes`);
             const dishes = await response.json();
             
-            statusBox.innerText = `🟢 Загружено блюд из СУБД Neon: ${dishes.length}`;
+            statusBox.innerText = `🟢 Успешно получено блюд из СУБД Neon: ${dishes.length}`;
             menuContainer.innerHTML = '';
 
             dishes.forEach(dish => {
@@ -109,21 +125,31 @@
         }
     }
 
-    // 2. ФУНКЦИЯ ДЕЙСТВИЯ: Меняет параметр в БД при клике на кнопку
+    // ТРЕГГЕР ДЕЙСТВИЯ: отправляет введенное число на Java-бэкенд
     async function triggerDbUpdate() {
-        if (!confirm("Отправить SQL-запрос UPDATE в базу данных Neon?")) return;
+        const priceInput = document.getElementById('customPrice');
+        const targetPrice = priceInput.value.trim();
+
+        if (!targetPrice || isNaN(targetPrice) || targetPrice <= 0) {
+            alert("Пожалуйста, введите корректное число больше нуля.");
+            return;
+        }
+
+        if (!confirm(`Отправить SQL-запрос UPDATE и установить цену пиццы равной ${targetPrice} ₽?`)) return;
 
         try {
             const response = await fetch(`${backendUrl}/api/dishes/update-price`, {
-                method: 'POST'
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: targetPrice // отправляем только цифру в теле запроса
             });
             const data = await response.json();
             
             if (data.status === 'success') {
                 alert(data.message);
-                loadMenu(); // Перезагружаем витрину, чтобы увидеть изменения!
+                loadMenu(); // Перезагружаем меню, чтобы сразу увидеть новую цену на витрине!
             } else {
-                alert("Ошибка: " + data.message);
+                alert("Ошибка сервера: " + data.message);
             }
         } catch (error) {
             alert("Не удалось связаться с сервером для изменения данных.");

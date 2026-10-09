@@ -3,160 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Витрина SkyFood</title>
+    <title>SkyFood — База знаний проекта</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 40px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        h1 { color: #2c3e50; margin-bottom: 10px; }
-        .admin-panel {
-            background: #e2e8f0;
-            padding: 15px 25px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            max-width: 1200px;
-            width: 100%;
-            box-sizing: border-box;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .admin-controls { display: flex; align-items: center; gap: 10px; }
-        .price-input {
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 6px;
-            border: 1px solid #cbd5e1;
-            width: 100px;
-            text-align: center;
-        }
-        .admin-btn {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        .admin-btn:hover { background-color: #c0392b; }
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            max-width: 1200px;
-            width: 100%;
-        }
-        .dish-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .dish-name { font-size: 20px; font-weight: bold; color: #2c3e50; margin: 0 0 10px 0; }
-        .dish-desc { font-size: 14px; color: #7f8c8d; line-height: 1.4; margin: 0 0 20px 0; }
-        .dish-footer { display: flex; justify-content: space-between; align-items: center; }
-        .dish-price { font-size: 18px; font-weight: bold; color: #e67e22; }
-        .status-box { margin-bottom: 10px; color: #7f8c8d; font-size: 14px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: #f4f6f9; color: #333; display: flex; }
+        
+        /* Левая боковая панель (Wiki-меню) */
+        .sidebar { width: 280px; background: #1e293b; color: #fff; padding: 25px; position: fixed; height: 100vh; overflow-y: auto; }
+        .logo { font-size: 1.3rem; font-weight: bold; margin-bottom: 30px; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+        .menu-title { font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; margin-bottom: 10px; }
+        .menu a { display: block; color: #cbd5e1; text-decoration: none; padding: 10px 14px; border-radius: 6px; margin-bottom: 4px; font-size: 0.95rem; transition: 0.2s; }
+        .menu a:hover, .menu a.active { background: #334155; color: #fff; }
+        
+        .sidebar-footer { margin-top: 40px; border-top: 1px solid #334155; padding-top: 20px; }
+        .teacher-link { display: block; background: #e74c3c; color: white; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.2s; }
+        .teacher-link:hover { background: #c0392b; }
+
+        /* Правая область контента */
+        .content { margin-left: 280px; padding: 40px; width: calc(100% - 280px); max-width: 1000px; }
+        section { background: #fff; padding: 35px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        h1 { font-size: 2.2rem; margin-bottom: 10px; color: #0f172a; }
+        h2 { font-size: 1.5rem; margin-bottom: 15px; color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-top: 10px; }
+        p { line-height: 1.6; color: #475569; margin-bottom: 15px; }
+        .subtitle { color: #64748b; font-size: 1.1rem; margin-bottom: 25px; font-weight: 400; }
+        
+        /* Таблицы */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px 15px; text-align: left; font-size: 0.95rem; }
+        th { background: #f8fafc; font-weight: 600; color: #1e293b; }
+        td { color: #334155; }
     </style>
 </head>
 <body>
 
-    <h1>🚀 Доставка еды SkyFood</h1>
-    
-    <!-- ИНТЕРАКТИВНЫЙ ПУЛЬТ С ПОВЫШЕНИЕМ/ПОНИЖЕНИЕМ ПАРАМЕТРА -->
-    <div class="admin-panel">
-        <div>
-            <strong>Пульт преподавателя:</strong> Интерактивное изменение цены Пиццы в СУБД Neon.
-        </div>
-        <div class="admin-controls">
-            <input type="number" id="customPrice" class="price-input" value="350" min="1" max="10000">
-            <span style="font-size: 16px; font-weight: bold;">₽</span>
-            <button class="admin-btn" onclick="triggerDbUpdate()">Установить цену</button>
-        </div>
-    </div>
-
-    <div id="status" class="status-box">Загрузка меню из PostgreSQL...</div>
-    <div id="menu" class="menu-grid"></div>
-
-<script>
-    const backendUrl = 'https://skyfood-95ma.onrender.com';
-
-    // Функция загрузки актуального меню с сервера
-    async function loadMenu() {
-        const menuContainer = document.getElementById('menu');
-        const statusBox = document.getElementById('status');
+    <!-- Боковая навигация (Wiki-меню) -->
+    <aside class="sidebar">
+        <div class="logo">📚 SkyFood Wiki</div>
+        <div class="menu-title">Содержание</div>
+        <nav class="menu">
+            <a href="#about" class="active">О проекте</a>
+            <a href="#problem">Проблема и решение</a>
+            <a href="#stack">Технологический стек</a>
+            <a href="#workflow">Сценарий по ФАП-82</a>
+            <a href="#team">Команда и роли</a>
+        </nav>
         
-        try {
-            const response = await fetch(`${backendUrl}/api/dishes`);
-            const dishes = await response.json();
-            
-            statusBox.innerText = `🟢 Успешно получено блюд из СУБД Neon: ${dishes.length}`;
-            menuContainer.innerHTML = '';
+        <div class="sidebar-footer">
+            <div class="menu-title" style="margin-bottom: 8px;">Для проверки</div>
+            <a href="vitrine.html" class="teacher-link">🚀 Открыть витрину (для преп.)</a>
+        </div>
+    </aside>
 
-            dishes.forEach(dish => {
-                const card = document.createElement('div');
-                card.className = 'dish-card';
-                card.innerHTML = `
-                    <div>
-                        <h2 class="dish-name">${dish.name}</h2>
-                        <p class="dish-desc">${dish.description}</p>
-                    </div>
-                    <div class="dish-footer">
-                        <span class="dish-price">${dish.price} ₽</span>
-                    </div>
-                `;
-                menuContainer.appendChild(card);
-            });
-        } catch (error) {
-            statusBox.innerHTML = '<span style="color: #c62828;">🔴 Ошибка загрузки меню.</span>';
-        }
-    }
+    <!-- Основной контент базы знаний -->
+    <main class="content">
+        <section id="about">
+            <h1>SkyFood</h1>
+            <p class="subtitle">Автоматизированная система выдачи питания пассажирам при задержке рейсов.</p>
+            <p>Добро пожаловать в официальную базу знаний проекта! Здесь собрана вся документация: от бизнес-логики и архитектуры до инструкций по разработке.</p>
+        </section>
 
-    // ТРЕГГЕР ДЕЙСТВИЯ: отправляет введенное число на Java-бэкенд
-    async function triggerDbUpdate() {
-        const priceInput = document.getElementById('customPrice');
-        const targetPrice = priceInput.value.trim();
+        <section id="problem">
+            <h2>Проблема и суть сервиса</h2>
+            <p>При длительной задержке рейсов пассажиры по закону имеют право на бесплатное питание (согласно ФАП-82). Однако ручной учёт по бумажным талонам создает путаницу, очереди и сложности с отчётностью.</p>
+            <table>
+                <tr><th>Старый подход (проблема)</th><th>Решение SkyFood</th></tr>
+                <tr><td>Бумажные талоны и ручная сверка</td><td>Цифровой учёт и автоматическая валидация</td></tr>
+                <tr><td>Пассажиры не знают о своих правах</td><td>Прозрачное информирование и выдача ваучеров</td></tr>
+                <tr><td>Сложность составления отчетов для авиакомпаний</td><td>Единый журнал транзакций в базе данных</td></tr>
+            </table>
+        </section>
 
-        if (!targetPrice || isNaN(targetPrice) || targetPrice <= 0) {
-            alert("Пожалуйста, введите корректное число больше нуля.");
-            return;
-        }
+        <section id="stack">
+            <h2>Технологический стек</h2>
+            <table>
+                <tr><th>Компонент</th><th>Технология</th><th>Размещение</th></tr>
+                <tr><td>Фронтенд (Wiki / Сайт)</td><td>HTML / CSS / JS</td><td>Render</td></tr>
+                <tr><td>Бэкенд</td><td>Java</td><td>Render.com</td></tr>
+                <tr><td>База данных</td><td>PostgreSQL</td><td>Neon / Cloud DB</td></tr>
+            </table>
+        </section>
 
-        if (!confirm(`Отправить SQL-запрос UPDATE и установить цену пиццы равной ${targetPrice} ₽?`)) return;
+        <section id="workflow">
+            <h2>Сценарий по ФАП-82</h2>
+            <p>Система автоматически фиксирует задержку рейса, рассчитывает положенное время питания (каждые 4 часа днем / 6 часов ночью) и генерирует уникальные цифровые ваучеры для пассажиров.</p>
+        </section>
 
-        try {
-            const response = await fetch(`${backendUrl}/api/dishes/update-price`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: targetPrice // отправляем только цифру в теле запроса
-            });
-            const data = await response.json();
-            
-            if (data.status === 'success') {
-                alert(data.message);
-                loadMenu(); // Перезагружаем меню, чтобы сразу увидеть новую цену на витрине!
-            } else {
-                alert("Ошибка сервера: " + data.message);
-            }
-        } catch (error) {
-            alert("Не удалось связаться с сервером для изменения данных.");
-        }
-    }
+        <section id="team">
+            <h2>Команда проекта</h2>
+            <p>Распределение ролей в разработке: проектирование базы данных, реализация логики бэкенда на Java и создание интерфейсов.</p>
+        </section>
+    </main>
 
-    window.onload = loadMenu;
-</script>
 </body>
 </html>

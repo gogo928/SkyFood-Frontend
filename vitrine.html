@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Витрина SkyFood</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { color: #2c3e50; margin-bottom: 10px; }
+        .admin-panel {
+            background: #e2e8f0;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            max-width: 1200px;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .admin-controls { display: flex; align-items: center; gap: 10px; }
+        .price-input {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            width: 100px;
+            text-align: center;
+        }
+        .admin-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .admin-btn:hover { background-color: #c0392b; }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .dish-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .dish-name { font-size: 20px; font-weight: bold; color: #2c3e50; margin: 0 0 10px 0; }
+        .dish-desc { font-size: 14px; color: #7f8c8d; line-height: 1.4; margin: 0 0 20px 0; }
+        .dish-footer { display: flex; justify-content: space-between; align-items: center; }
+        .dish-price { font-size: 18px; font-weight: bold; color: #e67e22; }
+        .status-box { margin-bottom: 10px; color: #7f8c8d; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <h1>🚀 Доставка еды SkyFood</h1>
+    
+    <!-- ИНТЕРАКТИВНЫЙ ПУЛЬТ С ПОВЫШЕНИЕМ/ПОНИЖЕНИЕМ ПАРАМЕТРА -->
+    <div class="admin-panel">
+        <div>
+            <strong>Пульт преподавателя:</strong> Интерактивное изменение цены Пиццы в СУБД Neon.
+        </div>
+        <div class="admin-controls">
+            <input type="number" id="customPrice" class="price-input" value="350" min="1" max="10000">
+            <span style="font-size: 16px; font-weight: bold;">₽</span>
+            <button class="admin-btn" onclick="triggerDbUpdate()">Установить цену</button>
+        </div>
+    </div>
+
+    <div id="status" class="status-box">Загрузка меню из PostgreSQL...</div>
+    <div id="menu" class="menu-grid"></div>
+
+<script>
+    const backendUrl = 'https://skyfood-95ma.onrender.com';
+
+    // Функция загрузки актуального меню с сервера
+    async function loadMenu() {
+        const menuContainer = document.getElementById('menu');
+        const statusBox = document.getElementById('status');
+        
+        try {
+            const response = await fetch(`${backendUrl}/api/dishes`);
+            const dishes = await response.json();
+            
+            statusBox.innerText = `🟢 Успешно получено блюд из СУБД Neon: ${dishes.length}`;
+            menuContainer.innerHTML = '';
+
+            dishes.forEach(dish => {
+                const card = document.createElement('div');
+                card.className = 'dish-card';
+                card.innerHTML = `
+                    <div>
+                        <h2 class="dish-name">${dish.name}</h2>
+                        <p class="dish-desc">${dish.description}</p>
+                    </div>
+                    <div class="dish-footer">
+                        <span class="dish-price">${dish.price} ₽</span>
+                    </div>
+                `;
+                menuContainer.appendChild(card);
+            });
+        } catch (error) {
+            statusBox.innerHTML = '<span style="color: #c62828;">🔴 Ошибка загрузки меню.</span>';
+        }
+    }
+
+    // ТРЕГГЕР ДЕЙСТВИЯ: отправляет введенное число на Java-бэкенд
+    async function triggerDbUpdate() {
+        const priceInput = document.getElementById('customPrice');
+        const targetPrice = priceInput.value.trim();
+
+        if (!targetPrice || isNaN(targetPrice) || targetPrice <= 0) {
+            alert("Пожалуйста, введите корректное число больше нуля.");
+            return;
+        }
+
+        if (!confirm(`Отправить SQL-запрос UPDATE и установить цену пиццы равной ${targetPrice} ₽?`)) return;
+
+        try {
+            const response = await fetch(`${backendUrl}/api/dishes/update-price`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: targetPrice // отправляем только цифру в теле запроса
+            });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                alert(data.message);
+                loadMenu(); // Перезагружаем меню, чтобы сразу увидеть новую цену на витрине!
+            } else {
+                alert("Ошибка сервера: " + data.message);
+            }
+        } catch (error) {
+            alert("Не удалось связаться с сервером для изменения данных.");
+        }
+    }
+
+    window.onload = loadMenu;
+</script>
+</body>
+</html>
